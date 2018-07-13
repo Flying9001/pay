@@ -24,6 +24,8 @@
     <tomcat.servlet.api>9.0.2</tomcat.servlet.api>
     <httpClient>4.5.5</httpClient>
     <lombok>1.16.10</lombok>
+    <aspect>1.9.1</aspect>
+    <cglib>3.2.6</cglib>
     <alipay>3.1.0</alipay>
   </properties>
 
@@ -70,6 +72,28 @@
       <groupId>org.springframework</groupId>
       <artifactId>spring-aop</artifactId>
       <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-aspects</artifactId>
+      <version>${spring.version}</version>
+    </dependency>
+
+    <!-- aop aspect -->
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjrt</artifactId>
+      <version>${aspect}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.aspectj</groupId>
+      <artifactId>aspectjweaver</artifactId>
+      <version>${aspect}</version>
+    </dependency>
+    <dependency>
+      <groupId>cglib</groupId>
+      <artifactId>cglib</artifactId>
+      <version>${cglib}</version>
     </dependency>
 
     <!-- WEB 标签类 -->

@@ -17,17 +17,13 @@
     <mvc:annotation-driven>
         <mvc:message-converters>
             <bean class="org.springframework.http.converter.StringHttpMessageConverter"/>
-            <bean class="org.springframework.http.converter.ResourceHttpMessageConverter"/>
             <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
-                <property name="supportedMediaTypes">
-                    <list>
-                        <value>text/html;charset=UTF-8</value>
-                        <value>application/json;charset=UTF-8</value>
-                        <value>text/xml;charset=UTF-8</value>
-                        <value>text/plain;charset=UTF-8</value>
-                        <value>text/javascript;charset=UTF-8</value>
-                        <value>application/vnd.ms-excel;charset=UTF-8</value>
-                    </list>
+                <property name="objectMapper">
+                    <bean class="com.fasterxml.jackson.databind.ObjectMapper">
+                        <property name="serializationInclusion">
+                            <value type="com.fasterxml.jackson.annotation.JsonInclude.Include">NON_NULL</value>
+                        </property>
+                    </bean>
                 </property>
             </bean>
         </mvc:message-converters>
