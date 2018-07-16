@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -53,14 +54,6 @@ public class PayServiceImpl implements PayService {
             }
 
             /**
-             * 支付类型 payType 不是 1 或者 2
-             * 返回参数错误
-             */
-            if (resultMap.isEmpty()) {
-                return new ApiResult(ResponseCode.PAY_TYPE_ERROR);
-            }
-
-            /**
              * 生成失败,返回失败信息(微信支付)
              */
             if(!StringUtils.hasLength(resultMap.get("pre_pay_order_status"))){
@@ -72,5 +65,44 @@ public class PayServiceImpl implements PayService {
         }
 
         return ApiResult.success(resultMap);
+    }
+
+
+    /**
+     * (主动)获取支付结果
+     *
+     * @param params 订单信息(json 格式参数)
+     * @return
+     */
+    @Override
+    public ApiResult getPayResult(String params) {
+        if(!StringUtils.hasLength(params)){
+            return new ApiResult(ResponseCode.PARAMS_ERROR);
+        }
+        String payNo = null;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            PayBean payBean = objectMapper.readValue(params, PayBean.class);
+
+            switch (payBean.getPayType()) {
+                case 1: payNo = WXPayManager.getPayNo(wxPayConfigure,payBean.getOrderNo());
+                         break;
+                case 2: // TODO aliPay get pay result
+
+                default: return new ApiResult(ResponseCode.PARAMS_ERROR);
+            }
+
+            if(!StringUtils.hasLength(payNo)){
+                return new ApiResult(ResponseCode.PAY_ERROR);
+            }
+        } catch (IOException e) {
+            logger.error("get payResult Error",e);
+            return ApiResult.failure();
+        } catch (Exception e) {
+            logger.error("get payNo Error",e);
+            return ApiResult.failure();
+        }
+
+        return ApiResult.success(payNo);
     }
 }

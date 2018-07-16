@@ -42,7 +42,7 @@ public class WXPayManager {
         dataMap.put("notify_url",wxPayConfigure.getNOTIFY_URL());
         dataMap.put("trade_type",wxPayConfigure.getTRADE_TYPE());
         /**
-         * 生成签名 MD5 编码
+         * 生成签名(MD5 编码)
          */
         String md5Sign = SignUtil.getMD5Sign(dataMap,wxPayConfigure.getKEY(),wxPayConfigure.getFIELD_SIGN());
         dataMap.put("sign",md5Sign);
@@ -107,13 +107,14 @@ public class WXPayManager {
         /**
          * 发送请求数据
          */
-        String respXml = HttpClientUtil.requestWithoutCert(wxPayConfigure.getORDER_QUERY(),dataMap,
+        String resXml = HttpClientUtil.requestWithoutCert(wxPayConfigure.getORDER_QUERY(),dataMap,
                 5000,10000);
+        logger.debug(resXml);
         /**
          * 解析请求数据
          */
         dataMap.clear();
-        dataMap = processResponseXml(wxPayConfigure,respXml);
+        dataMap = processResponseXml(wxPayConfigure,resXml);
 
         /**
          * 返回处理结果
@@ -183,6 +184,25 @@ public class WXPayManager {
         resultMap.put("sign",sign);
 
         return resultMap;
+    }
+
+    /**
+     * 获取支付订单号
+     *
+     * @param wxPayConfigure 微信支付配置信息
+     * @param orderNo 外部订单号
+     * @return 微信支付流水号
+     * @throws Exception
+     */
+    public static String getPayNo(WXPayConfigure wxPayConfigure, String orderNo) throws Exception {
+        Map<String, String> resultMap = getPayResult(wxPayConfigure,orderNo);
+        if(resultMap.isEmpty()){
+            return null;
+        }
+        if(wxPayConfigure.getSUCCESS().equalsIgnoreCase(resultMap.get("trade_state"))){
+            return resultMap.get("transaction_id");
+        }
+        return null;
     }
 
 }

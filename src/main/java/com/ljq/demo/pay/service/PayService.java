@@ -12,10 +12,19 @@ public interface PayService {
     /**
      * 创建支付订单
      *
-     * @param params json 格式参数
+     * @param params json 订单信息(json 格式参数)
      * @return
      */
     ApiResult createPayOrder(String params);
+
+
+    /**
+     * (主动)获取支付结果
+     *
+     * @param params 订单信息(json 格式参数)
+     * @return
+     */
+    ApiResult getPayResult(String params);
 
 
 

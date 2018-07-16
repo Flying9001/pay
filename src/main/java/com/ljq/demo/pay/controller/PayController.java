@@ -26,7 +26,12 @@ public class PayController {
     private PayService payService;
 
 
-
+    /**
+     * 创建支付订单
+     *
+     * @param params 订单信息( json 格式数据)
+     * @return
+     */
     @RequestMapping(value = "createPayOrder",method = RequestMethod.POST)
     @ResponseBody
     protected ApiResult createPayOrder(@RequestBody String params){
@@ -42,6 +47,29 @@ public class PayController {
 
         return apiResult;
     }
+
+    /**
+     * 查询订单支付结果
+     *
+     * @param params 订单信息( json 格式数据)
+     * @return
+     */
+    @RequestMapping(value = "getPayResult",method = RequestMethod.POST)
+    @ResponseBody
+    protected ApiResult getPayResult(@RequestBody String params){
+
+        ApiResult apiResult = null;
+
+        try {
+            apiResult = payService.getPayResult(params);
+        } catch (Exception e) {
+            logger.error("订单支付结果查询失败",e);
+            return apiResult.failure();
+        }
+
+        return apiResult;
+    }
+
 
 
 

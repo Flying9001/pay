@@ -11,6 +11,8 @@ public enum ResponseCode {
 
 
     PAY_TYPE_ERROR(1001,"支付方式有误"),
+    PARAMS_ERROR(1002,"请求参数错误"),
+    PAY_ERROR(1003,"订单未支付或其他状态"),
 
 
     FAIL(-1, "FAIL");
