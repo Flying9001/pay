@@ -135,7 +135,7 @@ public class WXPayManager {
             throws Exception {
         String RETURN_CODE = "return_code";
         String return_code;
-        Map<String, String> respData = MapUtil.xmlToMap(xmlStr);
+        Map<String, String> respData = MapUtil.xml2Map(xmlStr);
         if (respData.containsKey(RETURN_CODE)) {
             return_code = respData.get(RETURN_CODE);
         } else {

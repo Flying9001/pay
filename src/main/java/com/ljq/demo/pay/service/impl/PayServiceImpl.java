@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ljq.demo.pay.bean.PayBean;
 import com.ljq.demo.pay.common.api.ApiResult;
 import com.ljq.demo.pay.common.api.ResponseCode;
+import com.ljq.demo.pay.common.util.FileUtil;
+import com.ljq.demo.pay.common.util.MapUtil;
+import com.ljq.demo.pay.common.util.SignUtil;
 import com.ljq.demo.pay.common.util.WXPayManager;
 import com.ljq.demo.pay.configure.WXPayConfigure;
 import com.ljq.demo.pay.service.PayService;
@@ -13,7 +16,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -105,4 +110,48 @@ public class PayServiceImpl implements PayService {
 
         return ApiResult.success(payNo);
     }
+
+    /**
+     * 微信支付结果通知
+     *
+     * @param request 微信支付回调请求
+     * @return 支付结果
+     */
+    @Override
+    public String WXPayNotify(HttpServletRequest request) {
+
+        String result = null;
+        try {
+            InputStream inputStream = request.getInputStream();
+            /**
+             * 读取通知参数
+             */
+            String strXML = FileUtil.getStringFromStream(inputStream);
+            Map<String,String> reqMap = MapUtil.xml2Map(strXML);
+            if(MapUtil.isEmpty(reqMap)){
+                logger.debug("request param is null");
+                return "FAIL";
+            }
+            /**
+             * 校验签名
+             */
+            if(!SignUtil.signValidate(reqMap,wxPayConfigure.getKEY(),wxPayConfigure.getFIELD_SIGN())){
+                logger.info("wxPay sign is error");
+                return "FAIL";
+            }
+            logger.debug("out_trade_no: {}",reqMap.get("out_trade_no"));
+            Map<String, String> resultMap = new HashMap<>();
+            resultMap.put("return_code","SUCCESS");
+            resultMap.put("return_msg","OK");
+            result = MapUtil.map2Xml(resultMap);
+        } catch (IOException e) {
+            logger.error("get request inputStream error",e);
+            return "FAIL";
+        } catch (Exception e) {
+            logger.error("resolve request param error",e);
+            return "FAIL";
+        }
+        return result;
+    }
+
 }

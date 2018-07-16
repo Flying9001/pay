@@ -2,6 +2,8 @@ package com.ljq.demo.pay.service;
 
 import com.ljq.demo.pay.common.api.ApiResult;
 
+import javax.servlet.http.HttpServletRequest;
+
 /**
  * @Description: 支付业务
  * @Author: junqiang.lu
@@ -26,6 +28,14 @@ public interface PayService {
      */
     ApiResult getPayResult(String params);
 
+
+    /**
+     * 微信支付结果通知
+     *
+     * @param request 微信支付回调请求
+     * @return 支付结果
+     */
+    String WXPayNotify(HttpServletRequest request);
 
 
 

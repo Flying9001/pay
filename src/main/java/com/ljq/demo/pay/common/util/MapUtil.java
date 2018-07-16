@@ -2,6 +2,10 @@ package com.ljq.demo.pay.common.util;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.dom4j.Document;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
+import org.dom4j.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
@@ -19,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -33,92 +38,42 @@ public final class MapUtil {
     private MapUtil(){}
 
     /**
-     * 将 object 对象转换为 Map<String, Object>
+     * 将 xml 转换为 map
      *
-     * @param object object 对象
-     * @return map
-     * @throws IOException
+     * @param xmlStr xml 格式字符串
+     * @return map 对象
+     * @throws DocumentException
      */
-    public static Map<String, Object> objectToMap(Object object) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-        String params = mapper.writeValueAsString(object);
-        Map<String, Object> resultMap = mapper.readValue(params, new TypeReference<Map<String,Object>>(){});
-        return resultMap;
+    public static Map<String, String> xml2Map(String xmlStr) throws DocumentException {
+        Map<String,String> map = new HashMap<String, String>();
+        Document doc = DocumentHelper.parseText(xmlStr);
+
+        if(doc == null)
+            return map;
+        Element root = doc.getRootElement();
+        for (Iterator iterator = root.elementIterator(); iterator.hasNext();) {
+            Element e = (Element) iterator.next();
+            map.put(e.getName(), e.getText());
+        }
+        return map;
     }
 
     /**
-     * XML格式字符串转换为Map
+     * map 转 xml (仅微信支付xml格式)
      *
-     * @param strXML XML字符串
-     * @return XML数据转换后的Map
-     * @throws Exception
+     * @param dataMap map 数据
+     * @return
      */
-    public static Map<String, String> xmlToMap(String strXML) throws Exception {
-        if(strXML == null || strXML.length() <= 0){
-            return null;
+    public static String map2Xml(Map<String, String> dataMap){
+        StringBuffer sb = new StringBuffer();
+        sb.append("<xml>");
+        for (String key : dataMap.keySet()) {
+            String value = "<![CDATA[" + dataMap.get(key) + "]]>";
+            sb.append("<" + key + ">" + value + "</" + key + ">");
         }
-        Map<String, String> data = new HashMap<String, String>();
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder= documentBuilderFactory.newDocumentBuilder();
-        InputStream stream = new ByteArrayInputStream(strXML.getBytes("UTF-8"));
-        org.w3c.dom.Document doc = documentBuilder.parse(stream);
-        doc.getDocumentElement().normalize();
-        NodeList nodeList = doc.getDocumentElement().getChildNodes();
-        for (int idx=0; idx<nodeList.getLength(); ++idx) {
-            Node node = nodeList.item(idx);
-            if (node.getNodeType() == Node.ELEMENT_NODE) {
-                org.w3c.dom.Element element = (org.w3c.dom.Element) node;
-                data.put(element.getNodeName(), element.getTextContent());
-            }
-        }
-        try {
-            stream.close();
-        }
-        catch (Exception ex) {
-            logger.error("xml to map error",ex);
-        }
-        return data;
-    }
+        sb.append("</xml>");
 
-    /**
-     * 将Map转换为XML格式的字符串
-     *
-     * @param data Map类型数据
-     * @return XML格式的字符串
-     * @throws Exception
-     */
-    public static String mapToXml(Map<String, String> data) throws Exception {
-        DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder documentBuilder= documentBuilderFactory.newDocumentBuilder();
-        org.w3c.dom.Document document = documentBuilder.newDocument();
-        org.w3c.dom.Element root = document.createElement("xml");
-        document.appendChild(root);
-        for (String key: data.keySet()) {
-            String value = data.get(key);
-            if (value == null) {
-                value = "";
-            }
-            value = value.trim();
-            org.w3c.dom.Element filed = document.createElement(key);
-            filed.appendChild(document.createTextNode(value));
-            root.appendChild(filed);
-        }
-        TransformerFactory tf = TransformerFactory.newInstance();
-        Transformer transformer = tf.newTransformer();
-        DOMSource source = new DOMSource(document);
-        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
-        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-        StringWriter writer = new StringWriter();
-        StreamResult result = new StreamResult(writer);
-        transformer.transform(source, result);
-        String output = writer.getBuffer().toString(); //.replaceAll("\n|\r", "");
-        try {
-            writer.close();
-        }
-        catch (Exception ex) {
-            logger.error("map to xml error",ex);
-        }
-        return output;
+        return sb.toString();
     }
 
     /**

@@ -26,7 +26,7 @@ public class HttpClientUtil {
     public static String requestWithoutCert(String strUrl, Map<String, String> reqData,
                                      int connectTimeoutMs, int readTimeoutMs) throws Exception {
         String UTF8 = "UTF-8";
-        String reqBody = MapUtil.mapToXml(reqData);
+        String reqBody = MapUtil.map2Xml(reqData);
         URL httpUrl = new URL(strUrl);
         HttpURLConnection httpURLConnection = (HttpURLConnection) httpUrl.openConnection();
         httpURLConnection.setDoOutput(true);
