@@ -6,3 +6,5 @@
 
 ### 1 [wxPay微信支付操作流程](doc/wxPay微信支付操作流程.md)  
 
+### 2 [aliPay支付宝支付操作流程.md](doc/aliPay支付宝支付操作流程.md)  
+

@@ -1,5 +1,9 @@
 ## wxPay 微信APP支付操作流程  
 
+写在前边:  
+
+有问题,找腾讯客服: [APP支付接入方法指引](http://kf.qq.com/faq/170116MvIvei170116m2AbUb.html)  
+
 ## 1 注册微信开放平台  
 
 开放平台地址: [https://open.weixin.qq.com/](https://open.weixin.qq.com/)  
@@ -175,6 +179,8 @@ By the way: 微信支付功能开通之后,可以创建的移动应用数量升�
 
 微信APP支付官方开发文档: [APP支付](https://pay.weixin.qq.com/wiki/doc/api/app/app.php?chapter=9_1)  
 
+腾讯客服: [APP支付接入方法指引](http://kf.qq.com/faq/170116MvIvei170116m2AbUb.html)
+
 微信支付必需字段:  
 
 | 字段名     | 描述                                                         |
@@ -194,6 +200,8 @@ Github项目源码: [https://github.com/Flying9001/pay](https://github.com/Flyin
 - 调起支付接口  
 - 支付结果通知  
 - 查询订单  
+
+### 3.3 开发测试工具  
 
 微信支付/支付宝 支付测试工具推荐:  
 

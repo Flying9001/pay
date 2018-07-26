@@ -10,7 +10,9 @@ import java.util.Map;
  * @Author: junqiang.lu
  * @Date: 2018/4/26
  */
-public class HttpClientUtil {
+public final class HttpClientUtil {
+
+    private HttpClientUtil(){}
 
 
 

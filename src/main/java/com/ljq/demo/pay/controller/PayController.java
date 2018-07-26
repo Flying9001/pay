@@ -95,6 +95,28 @@ public class PayController {
         return result;
     }
 
+    /**
+     * 支付宝支付结果通知
+     *
+     * @param request 支付宝回调请求
+     * @return
+     */
+    @RequestMapping(value = "aliPayNotify",method = RequestMethod.POST)
+    @ResponseBody
+    protected String aliPayNotify(HttpServletRequest request){
+
+        logger.debug("AliPay notify");
+        String result = null;
+        try {
+            result = payService.AliPayNotify(request);
+        } catch (Exception e) {
+            logger.error("支付宝结果通知解析失败",e);
+            return "FAIL";
+        }
+
+        logger.debug(result);
+        return result;
+    }
 
 
 }

@@ -1,18 +1,19 @@
 package com.ljq.demo.pay.service.impl;
 
+import com.alipay.api.AlipayApiException;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ljq.demo.pay.bean.PayBean;
 import com.ljq.demo.pay.common.api.ApiResult;
 import com.ljq.demo.pay.common.api.ResponseCode;
-import com.ljq.demo.pay.common.util.FileUtil;
-import com.ljq.demo.pay.common.util.MapUtil;
-import com.ljq.demo.pay.common.util.SignUtil;
-import com.ljq.demo.pay.common.util.WXPayManager;
+import com.ljq.demo.pay.common.util.*;
+import com.ljq.demo.pay.configure.AliPayConfigure;
 import com.ljq.demo.pay.configure.WXPayConfigure;
 import com.ljq.demo.pay.service.PayService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -34,6 +35,8 @@ public class PayServiceImpl implements PayService {
 
     @Autowired
     private WXPayConfigure wxPayConfigure;
+    @Autowired
+    private AliPayConfigure aliPayConfigure;
 
 
     /**
@@ -53,8 +56,11 @@ public class PayServiceImpl implements PayService {
                 case 1:
                     resultMap = WXPayManager.createOrder(wxPayConfigure, payBean);
                     break;
-                case 2 : // TODO aliPay
-
+                case 2 :
+                    resultMap.put("orderPayInfo",AliPayManager.createOrder(payBean.getOrderNo(),
+                                payBean.getAmount(), aliPayConfigure));
+                    resultMap.put("pre_pay_order_status","success"); // 预支付订单创建成功标识
+                    break;
                 default: return new ApiResult(ResponseCode.PAY_TYPE_ERROR);
             }
 
@@ -90,10 +96,12 @@ public class PayServiceImpl implements PayService {
             PayBean payBean = objectMapper.readValue(params, PayBean.class);
 
             switch (payBean.getPayType()) {
-                case 1: payNo = WXPayManager.getPayNo(wxPayConfigure,payBean.getOrderNo());
-                         break;
-                case 2: // TODO aliPay get pay result
-
+                case 1:
+                    payNo = WXPayManager.getPayNo(wxPayConfigure,payBean.getOrderNo());
+                    break;
+                case 2:
+                    payNo = AliPayManager.getPayResult(payBean.getOrderNo(), aliPayConfigure);
+                    break;
                 default: return new ApiResult(ResponseCode.PARAMS_ERROR);
             }
 
@@ -152,6 +160,42 @@ public class PayServiceImpl implements PayService {
             return "FAIL";
         }
         return result;
+    }
+
+    /**
+     * 支付宝支付结果通知
+     *
+     * @param request 支付宝回调请求
+     * @return
+     */
+    @Override
+    public String AliPayNotify(HttpServletRequest request) {
+        /**
+         * 读取通知参数
+         */
+        Map<String, String> params = AliPayManager.orderNotify(request.getParameterMap());
+        if(MapUtil.isEmpty(params)){
+            return "FAIL";
+        }
+        try {
+            /**
+             * 签名校验
+             */
+            if(!AlipaySignature.rsaCheckV1(params, aliPayConfigure.getALIPAY_PUBLIC_KEY(),
+                    aliPayConfigure.getCHARSET(), aliPayConfigure.getSIGN_TYPE())){
+                return "FAIL";
+            }
+            if (!"TRADE_SUCCESS".equalsIgnoreCase(params.get("trade_status"))) {
+                return "FAIL";
+            }
+        } catch (AlipayApiException e) {
+            logger.error("支付宝回调验证失败",e);
+            return "FAIL";
+        }
+        return "success";
+
+
+
     }
 
 }

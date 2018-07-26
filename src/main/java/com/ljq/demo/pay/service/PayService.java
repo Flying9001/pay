@@ -37,6 +37,14 @@ public interface PayService {
      */
     String WXPayNotify(HttpServletRequest request);
 
+    /**
+     * 支付宝支付结果通知
+     *
+     * @param request 支付宝回调请求
+     * @return
+     */
+    String AliPayNotify(HttpServletRequest request);
+
 
 
 
