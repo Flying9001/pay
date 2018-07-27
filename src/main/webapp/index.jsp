@@ -9,7 +9,7 @@
 <head>
     <base href="<%=basePath%>"/>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>Insert title here</title>
+    <title>Index-PayDemo</title>
 </head>
 
 <body>

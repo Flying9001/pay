@@ -12,7 +12,7 @@ public final class DateUtil {
     private DateUtil(){}
 
     /**
-     * 获取当前时间戳(秒级)
+     * 获取当前时间戳(秒级,10位数字)
      *
      * @return 时间戳
      */
