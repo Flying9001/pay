@@ -50,15 +50,18 @@ public class PayServiceImpl implements PayService {
         try {
             ObjectMapper objectMapper = new ObjectMapper();
             PayBean payBean = objectMapper.readValue(params, PayBean.class);
+            // 微信支付金额换算
+            int amountWxPay = CalculateUtil.multiply(Double.valueOf(payBean.getAmount()), 100, 2).intValue();
 
             switch (payBean.getPayType()) {
                 case 1:
-                    resultMap = WXPayManager.createOrder(wxPayConfigure, payBean);
+                    resultMap = WXPayManager.createOrder(wxPayConfigure, payBean.getOrderNo(),payBean.getIp(), amountWxPay);
                     break;
                 case 2 :
                     resultMap.put("orderPayInfo",AliPayManager.createOrder(payBean.getOrderNo(),
                                 payBean.getAmount(), aliPayConfigure));
-                    resultMap.put("pre_pay_order_status","success"); // 预支付订单创建成功标识
+                    // 预支付订单创建成功标识
+                    resultMap.put("pre_pay_order_status","success");
                     break;
                 default: return new ApiResult(ResponseCode.PAY_TYPE_ERROR);
             }

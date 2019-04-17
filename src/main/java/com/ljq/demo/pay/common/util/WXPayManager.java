@@ -1,6 +1,5 @@
 package com.ljq.demo.pay.common.util;
 
-import com.ljq.demo.pay.bean.PayBean;
 import com.ljq.demo.pay.configure.WXPayConfigure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,10 +23,12 @@ public class WXPayManager {
      *     需要请求微信统一下单接口
      *
      * @param wxPayConfigure 微信APP支付配置信息
-     * @param payBean 支付bean
+     * @param orderNo 订单编号
+     * @param ip 用户实际公网 ip
+     * @param amount 订单支付金额(单位: 分)
      * @return 微信预支付订单处理结果
      */
-    public static Map<String,String> createOrder(WXPayConfigure wxPayConfigure, PayBean payBean) throws Exception {
+    public static Map<String,String> createOrder(WXPayConfigure wxPayConfigure, String orderNo, String ip, int amount) throws Exception {
         /**
          * 生成微信「统一下单」请求数据
          */
@@ -36,9 +37,9 @@ public class WXPayManager {
         dataMap.put("mch_id",wxPayConfigure.getMCH_ID());
         dataMap.put("nonce_str",UUIDUtil.getUUID());
         dataMap.put("body",wxPayConfigure.getBODY());
-        dataMap.put("out_trade_no",payBean.getOrderNo());
-        dataMap.put("total_fee",payBean.getAmount());
-        dataMap.put("spbill_create_ip",payBean.getIp());
+        dataMap.put("out_trade_no",orderNo);
+        dataMap.put("total_fee",String.valueOf(amount));
+        dataMap.put("spbill_create_ip",ip);
         dataMap.put("notify_url",wxPayConfigure.getNOTIFY_URL());
         dataMap.put("trade_type",wxPayConfigure.getTRADE_TYPE());
         /**
