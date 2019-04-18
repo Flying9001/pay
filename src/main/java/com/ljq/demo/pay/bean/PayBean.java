@@ -28,10 +28,20 @@ public class PayBean implements Serializable {
 
     /**
      * 支付方式
-     * 0 未选择
-     * 1 微信支付
-     * 2 支付宝支付
+     * 11: 支付宝电脑网站支付
+     * 12: 支付宝手机网站支付
+     * 13: 支付宝 APP 支付
+     *
+     * 21: 微信 NATIVE 支付(二维码支付)
+     * 22: 微信 JSAPI 支付
+     * 23: 微信 H5 支付
+     * 24: 微信 APP 支付
      */
     private int payType;
+
+    /**
+     * 微信 JSAPI 支付必传
+     */
+    private String openId;
 
 }

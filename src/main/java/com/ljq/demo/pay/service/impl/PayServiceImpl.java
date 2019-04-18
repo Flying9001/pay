@@ -2,16 +2,15 @@ package com.ljq.demo.pay.service.impl;
 
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.internal.util.AlipaySignature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ljq.demo.pay.bean.PayBean;
 import com.ljq.demo.pay.common.api.ApiResult;
 import com.ljq.demo.pay.common.api.ResponseCode;
+import com.ljq.demo.pay.common.constant.PayTypeConst;
 import com.ljq.demo.pay.common.util.*;
-import com.ljq.demo.pay.configure.AliPayConfigure;
-import com.ljq.demo.pay.configure.WXPayConfigure;
+import com.ljq.demo.pay.configure.AliPayConfig;
+import com.ljq.demo.pay.configure.WxPayConfig;
 import com.ljq.demo.pay.service.PayService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -21,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @Description: 支付业务具体实现
@@ -28,97 +28,128 @@ import java.util.Map;
  * @Date: 2018/7/10
  */
 @Service("payService")
+@Slf4j
 public class PayServiceImpl implements PayService {
 
-    private static final Logger logger = LoggerFactory.getLogger(PayServiceImpl.class);
-
     @Autowired
-    private WXPayConfigure wxPayConfigure;
+    private WxPayConfig wxPayConfig;
     @Autowired
-    private AliPayConfigure aliPayConfigure;
+    private AliPayConfig aliPayConfig;
 
 
     /**
      * 创建支付订单
      *
-     * @param params json 格式参数
+     * @param payBean json 格式参数
      * @return
      */
     @Override
-    public ApiResult createPayOrder(String params) {
-        Map<String, String> resultMap = new HashMap<>();
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            PayBean payBean = objectMapper.readValue(params, PayBean.class);
-            // 微信支付金额换算
-            int amountWxPay = CalculateUtil.multiply(Double.valueOf(payBean.getAmount()), 100, 2).intValue();
-
-            switch (payBean.getPayType()) {
-                case 1:
-                    resultMap = WXPayManager.createOrder(wxPayConfigure, payBean.getOrderNo(),payBean.getIp(), amountWxPay);
-                    break;
-                case 2 :
-                    resultMap.put("orderPayInfo",AliPayManager.createOrder(payBean.getOrderNo(),
-                                payBean.getAmount(), aliPayConfigure));
-                    // 预支付订单创建成功标识
-                    resultMap.put("pre_pay_order_status","success");
-                    break;
-                default: return new ApiResult(ResponseCode.PAY_TYPE_ERROR);
-            }
-
-            /**
-             * 生成失败,返回失败信息(微信支付)
-             */
-            if(!StringUtils.hasLength(resultMap.get("pre_pay_order_status"))){
-                return  ApiResult.failure(ResponseCode.FAIL.getCode(),ResponseCode.FAIL.getMsg(),resultMap);
-            }
-        } catch (Exception e) {
-            logger.error("pay Error",e);
-            return ApiResult.failure();
+    public ApiResult createPayOrder(PayBean payBean) throws Exception {
+        // 微信支付金额换算
+        int amountWxPay = CalculateUtil.multiply(Double.valueOf(payBean.getAmount()), 100, 2).intValue();
+        // 返回结果
+        Map<String, String> resultMap = new HashMap<>(16);
+        // 创建支付订单
+        switch (payBean.getPayType()) {
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_PC:
+                // 支付宝电脑网站支付
+                String aliPayPCForm = AliPayManager.createPCOrder(payBean.getOrderNo(),
+                        String.valueOf(payBean.getAmount()), aliPayConfig);
+                if (!StringUtils.isEmpty(aliPayPCForm)) {
+                    resultMap.put("prePayOrderInfo",aliPayPCForm);
+                    return ApiResult.success(resultMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_WAP:
+                // 支付宝手机网站支付
+                String aliPayWapForm = AliPayManager.createWapOrder(payBean.getOrderNo(),
+                        String.valueOf(payBean.getAmount()), aliPayConfig);
+                if (!StringUtils.isEmpty(aliPayWapForm)) {
+                    resultMap.put("prePayOrderInfo",aliPayWapForm);
+                    return ApiResult.success(resultMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_APP:
+                // 支付宝 APP 支付
+                String aliPayAppForm = AliPayManager.createAppOrder(payBean.getOrderNo(),
+                        String.valueOf(payBean.getAmount()), aliPayConfig);
+                if (!StringUtils.isEmpty(aliPayAppForm)) {
+                    resultMap.put("prePayOrderInfo",aliPayAppForm);
+                    return ApiResult.success(resultMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX_NATIVE:
+                // 微信 NATIVE 支付(二维码)
+                Map<String,String> wxPayNativeMap = WxPayManager.createNativeOrder(wxPayConfig, payBean.getOrderNo(),
+                        amountWxPay, payBean.getIp());
+                if (wxPayNativeMap != null &&
+                        Objects.equals(wxPayNativeMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
+                    resultMap.put("prePayOrderInfo",wxPayNativeMap.get("code_url"));
+                    return ApiResult.success(resultMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX_JSAPI:
+                // 微信 JsAPI 支付(公众号)
+                if (StringUtils.isEmpty(payBean.getOpenId())) {
+                    return ApiResult.failure(ResponseCode.PAY_SUBMIT_ERROR);
+                }
+                Map<String, String> wxPayJsAPIMap = WxPayManager.createJsAPIOrder(wxPayConfig, payBean.getOrderNo(),
+                        amountWxPay, payBean.getIp(), payBean.getOpenId());
+                if (wxPayJsAPIMap != null &&
+                        Objects.equals(wxPayJsAPIMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
+                    return ApiResult.success(wxPayJsAPIMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX_H5:
+                // 微信 H5 支付
+                Map<String, String> wxPayH5Map = WxPayManager.createH5Order(wxPayConfig, payBean.getOrderNo(),
+                        amountWxPay, payBean.getIp());
+                if (wxPayH5Map != null &&
+                        Objects.equals(wxPayH5Map.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
+                    resultMap.put("prePayOrderInfo",wxPayH5Map.get("mweb_url"));
+                    return ApiResult.success(resultMap);
+                }
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX_APP:
+                // 微信 APP 支付
+                Map<String, String> wxPayAppMap = WxPayManager.createAppOrder(wxPayConfig, payBean.getOrderNo(),
+                        amountWxPay, payBean.getIp());
+                if (wxPayAppMap != null &&
+                        Objects.equals(wxPayAppMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
+                    return ApiResult.success(wxPayAppMap);
+                }
+                break;
+            default:
+                return ApiResult.failure(ResponseCode.PAY_TYPE_ERROR);
         }
-
-        return ApiResult.success(resultMap);
+        return ApiResult.failure(ResponseCode.PAY_SUBMIT_ERROR);
     }
-
 
     /**
      * (主动)获取支付结果
      *
-     * @param params 订单信息(json 格式参数)
+     * @param payBean 订单信息(json 格式参数)
      * @return
      */
     @Override
-    public ApiResult getPayResult(String params) {
-        if(!StringUtils.hasLength(params)){
-            return new ApiResult(ResponseCode.PARAMS_ERROR);
+    public ApiResult getPayResult(PayBean payBean) throws Exception {
+        // 返回结果
+        Map<String, String> resultMap;
+        switch (payBean.getPayType()) {
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY:
+                resultMap = AliPayManager.getPayResult(aliPayConfig, payBean.getOrderNo());
+                break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX:
+                resultMap = WxPayManager.getPayResult(wxPayConfig, payBean.getOrderNo());
+                break;
+            default:
+                return ApiResult.failure(ResponseCode.PAY_TYPE_ERROR);
         }
-        String payNo = null;
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            PayBean payBean = objectMapper.readValue(params, PayBean.class);
-
-            switch (payBean.getPayType()) {
-                case 1:
-                    payNo = WXPayManager.getPayNo(wxPayConfigure,payBean.getOrderNo());
-                    break;
-                case 2:
-                    payNo = AliPayManager.getPayResult(payBean.getOrderNo(), aliPayConfigure);
-                    break;
-                default: return new ApiResult(ResponseCode.PARAMS_ERROR);
-            }
-
-            if(!StringUtils.hasLength(payNo)){
-                return new ApiResult(ResponseCode.PAY_ERROR);
-            }
-        } catch (IOException e) {
-            logger.error("get payResult Error",e);
-            return ApiResult.failure();
-        } catch (Exception e) {
-            logger.error("get payNo Error",e);
-            return ApiResult.failure();
+        if (MapUtil.isEmpty(resultMap)) {
+            return ApiResult.failure(ResponseCode.PAY_STATUS_ERROR);
         }
 
-        return ApiResult.success(payNo);
+        return ApiResult.success(resultMap);
     }
 
     /**
@@ -128,7 +159,7 @@ public class PayServiceImpl implements PayService {
      * @return 支付结果
      */
     @Override
-    public String WXPayNotify(HttpServletRequest request) {
+    public String wxPayNotify(HttpServletRequest request) {
 
         String result = null;
         try {
@@ -139,27 +170,30 @@ public class PayServiceImpl implements PayService {
             String strXML = FileUtil.getStringFromStream(inputStream);
             Map<String,String> reqMap = MapUtil.xml2Map(strXML);
             if(MapUtil.isEmpty(reqMap)){
-                logger.debug("request param is null");
-                return "FAIL";
+                log.warn("request param is null");
+                return wxPayConfig.getResponseFail();
             }
             /**
              * 校验签名
              */
-            if(!SignUtil.signValidate(reqMap,wxPayConfigure.getKEY(),wxPayConfigure.getFIELD_SIGN())){
-                logger.info("wxPay sign is error");
-                return "FAIL";
+            if(!SignUtil.signValidate(reqMap, wxPayConfig.getKey(), wxPayConfig.getFieldSign())){
+                log.warn("wxPay sign is error");
+                return wxPayConfig.getResponseFail();
             }
-            logger.debug("out_trade_no: {}",reqMap.get("out_trade_no"));
-            Map<String, String> resultMap = new HashMap<>();
-            resultMap.put("return_code","SUCCESS");
+            // TODO 其他业务处理
+
+
+            log.debug("out_trade_no: {}",reqMap.get("out_trade_no"));
+            Map<String, String> resultMap = new HashMap<>(16);
+            resultMap.put("return_code",wxPayConfig.getResponseSuccess());
             resultMap.put("return_msg","OK");
             result = MapUtil.map2Xml(resultMap);
         } catch (IOException e) {
-            logger.error("get request inputStream error",e);
-            return "FAIL";
+            log.error("get request inputStream error",e);
+            return wxPayConfig.getResponseFail();
         } catch (Exception e) {
-            logger.error("resolve request param error",e);
-            return "FAIL";
+            log.error("resolve request param error",e);
+            return wxPayConfig.getResponseFail();
         }
         return result;
     }
@@ -171,33 +205,53 @@ public class PayServiceImpl implements PayService {
      * @return
      */
     @Override
-    public String AliPayNotify(HttpServletRequest request) {
-        /**
-         * 读取通知参数
-         */
-        Map<String, String> params = AliPayManager.orderNotify(request.getParameterMap());
+    public String aliPayNotify(HttpServletRequest request) {
+        // 读取通知参数
+        Map<String, String> params = AliPayManager.getNotifyParams(request.getParameterMap());
         if(MapUtil.isEmpty(params)){
-            return "FAIL";
+            return aliPayConfig.getResponseFail();
         }
         try {
-            /**
-             * 签名校验
-             */
-            if(!AlipaySignature.rsaCheckV1(params, aliPayConfigure.getALIPAY_PUBLIC_KEY(),
-                    aliPayConfigure.getCHARSET(), aliPayConfigure.getSIGN_TYPE())){
-                return "FAIL";
+            // 签名校验
+            if(!AlipaySignature.rsaCheckV1(params, aliPayConfig.getAlipayPublicKey(),
+                    aliPayConfig.getCharset(), aliPayConfig.getSignType())){
+                return aliPayConfig.getResponseFail();
             }
-            if (!"TRADE_SUCCESS".equalsIgnoreCase(params.get("trade_status"))) {
-                return "FAIL";
-            }
+            // TODO 其他业务处理
+
+
+
         } catch (AlipayApiException e) {
-            logger.error("支付宝回调验证失败",e);
-            return "FAIL";
+            log.error("支付宝回调验证失败",e);
+            return aliPayConfig.getResponseFail();
         }
-        return "success";
+        return aliPayConfig.getResponseSuccess();
+    }
 
+    /**
+     * 支付宝支付同步通知返回地址
+     * @param request
+     * @return
+     */
+    @Override
+    public String aliPayReturnUrl(HttpServletRequest request) {
+        // 读取通知参数
+        Map<String, String> params = AliPayManager.getNotifyParams(request.getParameterMap());
+        if(MapUtil.isEmpty(params)){
+            return "alipay_fail_url";
+        }
+        try {
+            // 签名校验
+            if(!AlipaySignature.rsaCheckV1(params, aliPayConfig.getAlipayPublicKey(),
+                    aliPayConfig.getCharset(), aliPayConfig.getSignType())){
+                return "alipay_fail_url";
+            }
 
-
+        } catch (AlipayApiException e) {
+            log.error("支付宝回调验证失败",e);
+            return aliPayConfig.getResponseFail();
+        }
+        return "alipay_success_url";
     }
 
 }

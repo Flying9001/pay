@@ -15,51 +15,61 @@ public class ApiResult implements Serializable {
     private static final long serialVersionUID = 5616477943476838995L;
 
     /**
-     * return code,default 1000
+     * 返回码，200 正常
      */
-    private int code = 1000;
+    private int code = 200;
 
     /**
-     * return message,default 'SUCCESS'
+     * 返回信息
      */
-    private String msg = "SUCCESS";
+    private String msg = "成功";
 
     /**
-     * return data
+     * 返回数据
      */
     private Object data;
 
-    public ApiResult(){
-        super();
+    /**
+     * 系统当前时间
+     */
+    private Long timestamp = System.currentTimeMillis();
+
+    /**
+     * 获取成功状态结果
+     *
+     * @return
+     */
+    public static ApiResult success() {
+        return success(null);
     }
 
-    public ApiResult(int code, String msg){
-        this.code = code;
-        this.msg = msg;
-    }
-
-    public ApiResult(ResponseCode responseCode){
-        this.code = responseCode.getCode();
-        this.msg = responseCode.getMsg();
-    }
-
-    public static ApiResult success(Object data){
+    /**
+     * 获取成功状态结果
+     *
+     * @param data 返回数据
+     * @return
+     */
+    public static ApiResult success(Object data) {
         ApiResult apiResult = new ApiResult();
+        apiResult.setCode(ResponseCode.SUCCESS.getCode());
+        apiResult.setMsg(ResponseCode.SUCCESS.getMsg());
         apiResult.setData(data);
         return apiResult;
     }
 
     /**
      * 获取失败状态结果
+     *
      * @return
      */
     public static ApiResult failure() {
-        return failure(ResponseCode.FAIL.getCode(), ResponseCode.FAIL.getMsg(),null);
+        return failure(ResponseCode.FAIL.getCode(), ResponseCode.FAIL.getMsg(), null);
     }
 
     /**
      * 获取失败状态结果
-     * @param msg 错误信息
+     *
+     * @param msg (自定义)失败消息
      * @return
      */
     public static ApiResult failure(String msg) {
@@ -68,33 +78,45 @@ public class ApiResult implements Serializable {
 
     /**
      * 获取失败状态结果
+     *
+     * @param responseCode 返回状态码
      * @return
-     * @param code
-     * @param msg
      */
-    public static ApiResult failure(int code, String msg) {
-        return failure(code, msg, null);
+    public static ApiResult failure(ResponseCode responseCode) {
+        return failure(responseCode.getCode(), responseCode.getMsg(), null);
     }
 
     /**
      * 获取失败状态结果
+     *
+     * @param responseCode 返回状态码
+     * @param data         返回数据
+     * @return
+     */
+    public static ApiResult failure(ResponseCode responseCode, Object data) {
+        return failure(responseCode.getCode(), responseCode.getMsg(), data);
+    }
+
+    /**
+     * 获取失败返回结果
+     *
      * @param code 错误码
-     * @param msg 错误信息
+     * @param msg  错误信息
      * @param data 返回结果
      * @return
-     **/
+     */
     public static ApiResult failure(int code, String msg, Object data) {
         ApiResult result = new ApiResult();
         result.setCode(code);
         result.setMsg(msg);
         result.setData(data);
+        if (data instanceof String) {
+            String m = (String) data;
+            if (!m.matches("^.*error$")) {
+                m += "error";
+            }
+        }
         return result;
     }
-
-
-
-
-
-
 
 }

@@ -9,11 +9,12 @@ import java.math.BigDecimal;
  */
 public class CalculateUtil {
 
-    // 默认保留小数位数
+    /**
+     * 默认保留小数位数
+     */
     private static final int SCALE = 2;
 
     private CalculateUtil(){}
-
 
 
     /**
