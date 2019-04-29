@@ -119,6 +119,18 @@ public class PayServiceImpl implements PayService {
                     return ApiResult.success(wxPayAppMap);
                 }
                 break;
+            case PayTypeConst.ORDER_PAY_TYPE_WX_MINI:
+                // 微信 小程序 支付
+                if (StringUtils.isEmpty(payBean.getOpenId())) {
+                    return ApiResult.failure(ResponseCode.PAY_SUBMIT_ERROR);
+                }
+                Map<String, String> wxPayMiniMap = WxPayManager.createJsAPIOrder(wxPayConfig, payBean.getOrderNo(),
+                        amountWxPay, payBean.getIp(), payBean.getOpenId());
+                if (wxPayMiniMap != null &&
+                        Objects.equals(wxPayMiniMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
+                    return ApiResult.success(wxPayMiniMap);
+                }
+                break;
             default:
                 return ApiResult.failure(ResponseCode.PAY_TYPE_ERROR);
         }

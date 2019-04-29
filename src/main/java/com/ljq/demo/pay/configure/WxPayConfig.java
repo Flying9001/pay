@@ -20,10 +20,22 @@ import org.springframework.stereotype.Component;
 public class WxPayConfig {
 
     /**
-     * 应用 id
+     * APP 应用 id
      */
     @Value("${wxPay.pay.appId}")
     private String appId;
+
+    /**
+     * 公众号应用 id
+     */
+    @Value("${wxPay.pay.publicAppId}")
+    private String publicAppId;
+
+    /**
+     * 小程序应用 id
+     */
+    @Value("${wxPay.pay.miniAppId}")
+    private String miniAppId;
 
     /**
      * 商户号 mch id
@@ -32,16 +44,10 @@ public class WxPayConfig {
     private String mchId;
 
     /**
-     * 密钥(key)
+     * 商户号支付密钥(key)
      */
     @Value("${wxPay.pay.key}")
     private String key;
-
-    /**
-     * 微信 appSecret (可用于微信第三方登录)
-     */
-    @Value("${wxPay.pay.appSecret}")
-    private String appSecret;
 
     /**
      * 商品描述
@@ -102,6 +108,18 @@ public class WxPayConfig {
      */
     @Value("${wxPay.pay.field.sign}")
     private String fieldSign;
+
+    /**
+     * 微信支付签名方式
+     */
+    @Value("${wxPay.pay.signType}")
+    private String signType;
+
+    /**
+     * 微信 APP 支付扩展字段( APP 支付 package: Sign=WXPay)
+     */
+    @Value("${wxPay.pay.packageApp}")
+    private String packageApp;
 
     /**
      * 微信「统一下单」接口地址

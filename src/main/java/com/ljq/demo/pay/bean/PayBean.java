@@ -36,11 +36,12 @@ public class PayBean implements Serializable {
      * 22: 微信 JSAPI 支付
      * 23: 微信 H5 支付
      * 24: 微信 APP 支付
+     * 25: 微信 小程序 支付
      */
     private int payType;
 
     /**
-     * 微信 JSAPI 支付必传
+     * 微信 JSAPI/小程序 支付必传
      */
     private String openId;
 

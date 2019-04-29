@@ -24,6 +24,7 @@ public class PayTypeConst implements Serializable {
      * 22: 微信 JSAPI 支付
      * 23: 微信 H5 支付
      * 24: 微信 APP 支付
+     * 25: 微信 小程序 支付
      * WxPay: 微信支付文字说明
      */
     public static final int ORDER_PAY_TYPE_ALIPAY = 1;
@@ -36,6 +37,7 @@ public class PayTypeConst implements Serializable {
     public static final int ORDER_PAY_TYPE_WX_JSAPI = 22;
     public static final int ORDER_PAY_TYPE_WX_H5 = 23;
     public static final int ORDER_PAY_TYPE_WX_APP = 24;
+    public static final int ORDER_PAY_TYPE_WX_MINI = 25;
     public static final String ORDER_PAY_TYPE_WX_NOTE = "WxPay";
 
 }
