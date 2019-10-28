@@ -80,7 +80,8 @@ public class PayServiceImpl implements PayService {
                 break;
             case PayTypeConst.ORDER_PAY_TYPE_WX_NATIVE:
                 // 微信 NATIVE 支付(二维码)
-                Map<String,String> wxPayNativeMap = WxPayManager.createNativeOrder(wxPayConfig, payBean.getOrderNo(),
+                Map<String,String> wxPayNativeMap = WxPayManager.createNativeOrder(wxPayConfig,
+                        payBean.getOrderNo() + PayTypeConst.ORDER_PAY_TYPE_WX_NATIVE,
                         amountWxPay, payBean.getIp());
                 if (wxPayNativeMap != null &&
                         Objects.equals(wxPayNativeMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
@@ -93,7 +94,8 @@ public class PayServiceImpl implements PayService {
                 if (StringUtils.isEmpty(payBean.getOpenId())) {
                     return ApiResult.failure(ResponseCode.PAY_SUBMIT_ERROR);
                 }
-                Map<String, String> wxPayJsAPIMap = WxPayManager.createJsAPIOrder(wxPayConfig, payBean.getOrderNo(),
+                Map<String, String> wxPayJsAPIMap = WxPayManager.createJsAPIOrder(wxPayConfig,
+                        payBean.getOrderNo() + PayTypeConst.ORDER_PAY_TYPE_WX_JSAPI,
                         amountWxPay, payBean.getIp(), payBean.getOpenId());
                 if (wxPayJsAPIMap != null &&
                         Objects.equals(wxPayJsAPIMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
@@ -102,7 +104,8 @@ public class PayServiceImpl implements PayService {
                 break;
             case PayTypeConst.ORDER_PAY_TYPE_WX_H5:
                 // 微信 H5 支付
-                Map<String, String> wxPayH5Map = WxPayManager.createH5Order(wxPayConfig, payBean.getOrderNo(),
+                Map<String, String> wxPayH5Map = WxPayManager.createH5Order(wxPayConfig,
+                        payBean.getOrderNo() + PayTypeConst.ORDER_PAY_TYPE_WX_H5,
                         amountWxPay, payBean.getIp());
                 if (wxPayH5Map != null &&
                         Objects.equals(wxPayH5Map.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
@@ -112,7 +115,8 @@ public class PayServiceImpl implements PayService {
                 break;
             case PayTypeConst.ORDER_PAY_TYPE_WX_APP:
                 // 微信 APP 支付
-                Map<String, String> wxPayAppMap = WxPayManager.createAppOrder(wxPayConfig, payBean.getOrderNo(),
+                Map<String, String> wxPayAppMap = WxPayManager.createAppOrder(wxPayConfig,
+                        payBean.getOrderNo() + PayTypeConst.ORDER_PAY_TYPE_WX_APP,
                         amountWxPay, payBean.getIp());
                 if (wxPayAppMap != null &&
                         Objects.equals(wxPayAppMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
@@ -124,7 +128,8 @@ public class PayServiceImpl implements PayService {
                 if (StringUtils.isEmpty(payBean.getOpenId())) {
                     return ApiResult.failure(ResponseCode.PAY_SUBMIT_ERROR);
                 }
-                Map<String, String> wxPayMiniMap = WxPayManager.createJsAPIOrder(wxPayConfig, payBean.getOrderNo(),
+                Map<String, String> wxPayMiniMap = WxPayManager.createJsAPIOrder(wxPayConfig,
+                        payBean.getOrderNo() + PayTypeConst.ORDER_PAY_TYPE_WX_MINI,
                         amountWxPay, payBean.getIp(), payBean.getOpenId());
                 if (wxPayMiniMap != null &&
                         Objects.equals(wxPayMiniMap.get("pre_pay_order_status"), wxPayConfig.getResponseSuccess())) {
@@ -148,11 +153,17 @@ public class PayServiceImpl implements PayService {
         // 返回结果
         Map<String, String> resultMap;
         switch (payBean.getPayType()) {
-            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY:
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_PC:
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_WAP:
+            case PayTypeConst.ORDER_PAY_TYPE_ALIPAY_APP:
                 resultMap = AliPayManager.getPayResult(aliPayConfig, payBean.getOrderNo());
                 break;
-            case PayTypeConst.ORDER_PAY_TYPE_WX:
-                resultMap = WxPayManager.getPayResult(wxPayConfig, payBean.getOrderNo());
+            case PayTypeConst.ORDER_PAY_TYPE_WX_NATIVE:
+            case PayTypeConst.ORDER_PAY_TYPE_WX_JSAPI:
+            case PayTypeConst.ORDER_PAY_TYPE_WX_H5:
+            case PayTypeConst.ORDER_PAY_TYPE_WX_APP:
+            case PayTypeConst.ORDER_PAY_TYPE_WX_MINI:
+                resultMap = WxPayManager.getPayResult(wxPayConfig, payBean.getOrderNo() + payBean.getPayType());
                 break;
             default:
                 return ApiResult.failure(ResponseCode.PAY_TYPE_ERROR);
@@ -192,10 +203,11 @@ public class PayServiceImpl implements PayService {
                 log.warn("wxPay sign is error");
                 return wxPayConfig.getResponseFail();
             }
+            String orderNo = reqMap.get("out_trade_no").substring(0,reqMap.get("out_trade_no").length()-2);
+            log.debug("微信支付回调,订单编号: {}", orderNo);
             // TODO 其他业务处理
 
 
-            log.debug("out_trade_no: {}",reqMap.get("out_trade_no"));
             Map<String, String> resultMap = new HashMap<>(16);
             resultMap.put("return_code",wxPayConfig.getResponseSuccess());
             resultMap.put("return_msg","OK");
@@ -229,6 +241,8 @@ public class PayServiceImpl implements PayService {
                     aliPayConfig.getCharset(), aliPayConfig.getSignType())){
                 return aliPayConfig.getResponseFail();
             }
+            String orderNo = params.get("out_trade_no");
+            log.debug("支付宝回调,订单编号: {}",orderNo);
             // TODO 其他业务处理
 
 
