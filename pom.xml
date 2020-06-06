@@ -28,7 +28,7 @@
     <aspect>1.9.3</aspect>
     <cglib>3.2.6</cglib>
     <alipay>4.8.10.ALL</alipay>
-    <dom4j>2.1.1</dom4j>
+    <dom4j>2.1.3</dom4j>
   </properties>
 
   <dependencies>
