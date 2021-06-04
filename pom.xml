@@ -23,7 +23,7 @@
     <junit.version>4.12</junit.version>
     <jstl>1.2</jstl>
     <tomcat.servlet.api>9.0.19</tomcat.servlet.api>
-    <httpClient>4.5.8</httpClient>
+    <httpClient>4.5.13</httpClient>
     <lombok>1.18.10</lombok>
     <aspect>1.9.3</aspect>
     <cglib>3.2.6</cglib>
