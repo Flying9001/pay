@@ -19,7 +19,7 @@
     <spring.version>5.1.6.RELEASE</spring.version>
     <slf4j.version>1.7.25</slf4j.version>
     <slf4jLogback.version>1.2.3</slf4jLogback.version>
-    <jackson>2.10.0</jackson>
+    <jackson>2.13.4.1</jackson>
     <junit.version>4.12</junit.version>
     <jstl>1.2</jstl>
     <tomcat.servlet.api>9.0.19</tomcat.servlet.api>
